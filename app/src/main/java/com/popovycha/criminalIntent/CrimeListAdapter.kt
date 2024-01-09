@@ -4,7 +4,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
 import com.popovycha.criminalIntent.databinding.ListItemCrimeBinding
+import com.popovycha.criminalIntent.databinding.ListItemCrimePoliceBinding
 
 class CrimeListAdapter {
     class CrimeHolder (
@@ -14,6 +16,22 @@ class CrimeListAdapter {
             binding.crimeTitle.text = crime.title
             binding.crimeDate.text = crime.date.toString()
 
+            binding.root.setOnClickListener {
+                Toast.makeText(
+                    binding.root.context,
+                    "${crime.title} clicked!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+    //Challenge: RecyclerView View Types
+    class CrimePoliceHolder(
+        private val binding: ListItemCrimePoliceBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(crime: Crime) {
+            binding.crimeTitle.text = crime.title
+            binding.crimeDate.text = crime.date.toString()
             binding.root.setOnClickListener {
                 Toast.makeText(
                     binding.root.context,
@@ -33,8 +51,17 @@ class CrimeListAdapter {
             viewType: Int
         ) : CrimeHolder {
             val inflater = LayoutInflater.from(parent.context)
-            val binding = ListItemCrimeBinding.inflate(inflater, parent, false)
-            return CrimeHolder(binding)
+//            if (viewType == 1) {
+                val binding = ListItemCrimeBinding.inflate(inflater, parent, false)
+                return CrimeHolder(binding)
+//            } else {
+//                val binding = ListItemCrimePoliceBinding.inflate(inflater, parent, false)
+//                return CrimePoliceHolder(binding)
+//            }
+        }
+        //determine which view to load on the CrimeListAdapter
+        override fun getItemViewType(position: Int): Int {
+            return if (crimes[position].requiresPolice) 1 else 0
         }
         //onBindViewHolder responsible for populating a given holder with the crime from a given position
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
