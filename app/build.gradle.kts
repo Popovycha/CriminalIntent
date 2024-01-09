@@ -52,6 +52,7 @@ android {
 
 dependencies {
 
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     debugImplementation ("androidx.fragment:fragment-testing:1.4.1")
     implementation ("androidx.test:monitor:1.6.0")
     implementation("androidx.appcompat:appcompat:1.2.0")

@@ -1,12 +1,15 @@
 package com.popovycha.criminalIntent
 
+import android.icu.text.DateFormat
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.popovycha.criminalIntent.databinding.ListItemCrimeBinding
 import com.popovycha.criminalIntent.databinding.ListItemCrimePoliceBinding
+import java.util.Locale
 
 class CrimeListAdapter {
     class CrimeHolder (
@@ -14,14 +17,19 @@ class CrimeListAdapter {
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(crime: Crime) {
             binding.crimeTitle.text = crime.title
-            binding.crimeDate.text = crime.date.toString()
-
+            //Challenge: Formatting the Date
+            binding.crimeDate.text = DateFormat.getPatternInstance(DateFormat.YEAR_ABBR_MONTH_DAY).format(crime.date)
             binding.root.setOnClickListener {
                 Toast.makeText(
                     binding.root.context,
                     "${crime.title} clicked!",
                     Toast.LENGTH_SHORT
                 ).show()
+            }
+            binding.crimeSolved.visibility = if (crime.isSolved) {
+                View.VISIBLE
+            } else {
+                View.GONE
             }
         }
     }
