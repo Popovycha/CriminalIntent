@@ -6,10 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewbinding.ViewBinding
 import com.popovycha.criminalIntent.databinding.ListItemCrimeBinding
 import com.popovycha.criminalIntent.databinding.ListItemCrimePoliceBinding
-import java.util.Locale
+import kotlinx.coroutines.flow.StateFlow
 
 class CrimeListAdapter {
     class CrimeHolder (
@@ -68,9 +67,9 @@ class CrimeListAdapter {
 //            }
         }
         //determine which view to load on the CrimeListAdapter
-        override fun getItemViewType(position: Int): Int {
-            return if (crimes[position].requiresPolice) 1 else 0
-        }
+//        override fun getItemViewType(position: Int): Int {
+//            return if (crimes[position].requiresPolice) 1 else 0
+//        }
         //onBindViewHolder responsible for populating a given holder with the crime from a given position
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
             val crime = crimes[position]

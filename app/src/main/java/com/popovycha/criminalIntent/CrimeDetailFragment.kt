@@ -26,8 +26,7 @@ class CrimeDetailFragment : Fragment() {
             id = UUID.randomUUID(),
             title = "",
             date = Date(),
-            isSolved = false,
-            requiresPolice = false
+            isSolved = false
         )
     }
     //function where you inflate and bind the layout for the fragment’s
