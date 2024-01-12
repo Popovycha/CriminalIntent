@@ -9,21 +9,18 @@ import androidx.recyclerview.widget.RecyclerView
 import com.popovycha.criminalIntent.databinding.ListItemCrimeBinding
 import com.popovycha.criminalIntent.databinding.ListItemCrimePoliceBinding
 import kotlinx.coroutines.flow.StateFlow
+import java.util.UUID
 
 class CrimeListAdapter {
     class CrimeHolder (
         private val binding: ListItemCrimeBinding
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(crime: Crime) {
+        fun bind(crime: Crime, onCrimeClicked: (crimeId: UUID) -> Unit) {
             binding.crimeTitle.text = crime.title
             //Challenge: Formatting the Date
             binding.crimeDate.text = DateFormat.getPatternInstance(DateFormat.YEAR_ABBR_MONTH_DAY).format(crime.date)
             binding.root.setOnClickListener {
-                Toast.makeText(
-                    binding.root.context,
-                    "${crime.title} clicked!",
-                    Toast.LENGTH_SHORT
-                ).show()
+                onCrimeClicked(crime.id)
             }
             binding.crimeSolved.visibility = if (crime.isSolved) {
                 View.VISIBLE
@@ -49,7 +46,7 @@ class CrimeListAdapter {
         }
     }
 
-    class CrimeListAdapter(private val crimes: List<Crime>) : RecyclerView.Adapter<CrimeHolder>() {
+    class CrimeListAdapter(private val crimes: List<Crime>, private val onCrimeClicked: (crimeId: UUID) -> Unit) : RecyclerView.Adapter<CrimeHolder>() {
 
         //onCreateViewHolder is responsible for creating a
         //binding to display, wrapping the view in a view holder, and returning the result.
@@ -58,22 +55,13 @@ class CrimeListAdapter {
             viewType: Int
         ) : CrimeHolder {
             val inflater = LayoutInflater.from(parent.context)
-//            if (viewType == 1) {
                 val binding = ListItemCrimeBinding.inflate(inflater, parent, false)
                 return CrimeHolder(binding)
-//            } else {
-//                val binding = ListItemCrimePoliceBinding.inflate(inflater, parent, false)
-//                return CrimePoliceHolder(binding)
-//            }
         }
-        //determine which view to load on the CrimeListAdapter
-//        override fun getItemViewType(position: Int): Int {
-//            return if (crimes[position].requiresPolice) 1 else 0
-//        }
         //onBindViewHolder responsible for populating a given holder with the crime from a given position
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
             val crime = crimes[position]
-            holder.bind(crime)
+            holder.bind(crime, onCrimeClicked)
         }
         //how many items are in the data set backing it
         override fun getItemCount() = crimes.size
