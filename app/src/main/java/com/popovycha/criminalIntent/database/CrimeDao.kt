@@ -1,6 +1,7 @@
 package com.popovycha.criminalIntent.database
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import com.popovycha.criminalIntent.Crime
@@ -15,4 +16,6 @@ interface CrimeDao {
     fun getCrime(id: UUID): Crime
     @Update
     fun updateCrime(crime: Crime)
+    @Insert
+    fun addCrime(crime: Crime)
 }

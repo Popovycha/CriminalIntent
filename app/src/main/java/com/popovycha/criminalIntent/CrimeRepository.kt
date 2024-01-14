@@ -22,7 +22,6 @@ class CrimeRepository private constructor(context: Context, private val coroutin
             DATABASE_NAME
         )
         //.fallbackToDestructiveMigration()
-        .createFromAsset(DATABASE_NAME)
         .build()
 
     //call through to those implementations from your repository
@@ -41,6 +40,12 @@ class CrimeRepository private constructor(context: Context, private val coroutin
      fun updateCrime(crime: Crime) {
          coroutineScope.launch {
             database.crimeDao().updateCrime(crime)
+        }
+    }
+
+    fun addCrime(crime: Crime) {
+        coroutineScope.launch {
+            database.crimeDao().addCrime(crime)
         }
     }
     companion object {
