@@ -1,18 +1,26 @@
 package com.popovycha.criminalIntent
 
+import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.text.format.DateFormat
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
@@ -74,9 +82,22 @@ class CrimeDetailFragment : Fragment() {
                     oldCrime.copy(isSolved = isChecked)
                 }
             }
+            //challenge 16
             crimeSuspect.setOnClickListener {
-                selectSuspect.launch(null)
+                if (isPermissionGranted()) {
+                    selectSuspect.launch(null)
+                } else {
+                    onClickRequestPermission()
+                }
             }
+            //challenge 16
+            crimeCallSuspect.isEnabled = isPermissionGranted()
+            crimeCallSuspect.setOnClickListener {
+                val intent = Intent(Intent.ACTION_DIAL)
+                intent.data = Uri.parse("tel:${crimeCallSuspect.text}")
+                startActivity(intent)
+            }
+
             val selectSuspectIntent = selectSuspect.contract.createIntent(
                 requireContext(),
                 null
@@ -93,8 +114,12 @@ class CrimeDetailFragment : Fragment() {
         setFragmentResultListener(
             DatePickerFragment.REQUEST_KEY_DATE
         ) { _ , bundle ->
-            val newDate =
+            //challenge 16
+            val newDate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                bundle.getSerializable(DatePickerFragment.BUNDLE_KEY_DATE, Date::class.java) as Date
+            } else {
                 bundle.getSerializable(DatePickerFragment.BUNDLE_KEY_DATE) as Date
+            }
             crimeDetailViewModel.updateCrime { it.copy(date = newDate) }
         }
     }
@@ -130,6 +155,14 @@ class CrimeDetailFragment : Fragment() {
                 )
                 startActivity(chooserIntent)
             }
+            //challenge 16th
+            crimeSuspect.text = crime.suspect.ifEmpty {
+                getString(R.string.crime_suspect_text)
+            }
+            crimeCallSuspect.isEnabled = isPermissionGranted() && crime.phone.isNotEmpty()
+            crimeCallSuspect.text = crime.phone.ifEmpty {
+                getString(R.string.crime_call_suspect_text)
+            }
         }
     }
     private fun getCrimeReport(crime: Crime): String {
@@ -151,23 +184,61 @@ class CrimeDetailFragment : Fragment() {
     }
 //query that asks for all the display names of
 //the contacts in the returned data
+    @SuppressLint("Range")
     private fun parseContactSelection(contactUri: Uri) {
-        val queryFields = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
+        val queryFields = arrayOf(ContactsContract.Contacts.DISPLAY_NAME,
+            ContactsContract.Contacts._ID)
     //Cursor points to a database table
     //containing a single row and a single column
         val queryCursor = requireActivity().contentResolver
-            .query(contactUri, queryFields, null, null, null)
+            .query(contactUri,
+                queryFields,
+                null,
+                null,
+                null)
+
+        var contactID: String? = null
         queryCursor?.use { cursor ->
             //It moves the cursor to the first row, and it returns a Boolean
             if (cursor.moveToFirst()) {
-                val suspect = cursor.getString(0)
+                val suspect =
+                    cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME))
+
                 //the suspect information is stored here
                 crimeDetailViewModel.updateCrime { oldCrime ->
                     oldCrime.copy(suspect = suspect)
                     //UI will update as it observes the StateFlow’s changes
                 }
+                contactID = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
             }
         }
+        if (contactID != null) {
+           val phone = getPhoneNumberById(requireActivity(), contactID!!)
+           crimeDetailViewModel.updateCrime { oldCrime ->
+               oldCrime.copy(phone = phone)
+        }
+      }
+    }
+    //challenge 16
+    @SuppressLint("Range")
+    fun getPhoneNumberById(context: Context, contactId: String): String {
+
+        val queryCursor = context.contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+            arrayOf(contactId),
+            null
+        )
+
+        queryCursor?.use { cursor ->
+            return if (cursor.moveToFirst()) {
+                cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+            } else {
+                ""
+            }
+        }
+        return ""
     }
 
     private fun canResolveIntent(intent: Intent): Boolean {
@@ -178,5 +249,49 @@ class CrimeDetailFragment : Fragment() {
                 PackageManager.MATCH_DEFAULT_ONLY
             )
         return resolvedActivity != null
+    }
+    //challenge 16 until the end
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Log.i("Permission: ", "Granted")
+            binding.crimeCallSuspect.isEnabled = true
+            selectSuspect.launch(null)
+        } else {
+            Log.i("Permission: ", "Denied")
+            binding.crimeCallSuspect.isEnabled = false
+        }
+    }
+
+    private fun onClickRequestPermission() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(), android.Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                Toast.makeText(requireContext(), "Permission Granted", Toast.LENGTH_SHORT).show()
+            }
+
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                requireActivity(), android.Manifest.permission.READ_CONTACTS
+            ) -> {
+                Toast.makeText(requireContext(), "Permission Required", Toast.LENGTH_SHORT).show()
+                requestPermissionLauncher.launch(
+                    android.Manifest.permission.READ_CONTACTS
+                )
+            }
+
+            else -> {
+                requestPermissionLauncher.launch(
+                    android.Manifest.permission.READ_CONTACTS
+                )
+            }
+        }
+    }
+
+    private fun isPermissionGranted(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            requireContext(), android.Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
     }
 }

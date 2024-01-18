@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.popovycha.criminalIntent.database.CrimeDatabase
 import com.popovycha.criminalIntent.database.migration_1_2
+import com.popovycha.criminalIntent.database.migration_2_3
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -23,7 +24,7 @@ class CrimeRepository private constructor(context: Context, private val coroutin
             DATABASE_NAME
         )
         //.fallbackToDestructiveMigration()
-        .addMigrations(migration_1_2)
+        .addMigrations(migration_2_3)
         .build()
 
     //call through to those implementations from your repository
